@@ -4,6 +4,7 @@ import (
 	"encoding/base64"
 	"encoding/json"
 	"fmt"
+	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"net/http"
 )
@@ -55,20 +56,8 @@ func callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	var userName interface{}
-	provider, _ := getProviderName(r)
-	switch provider {
-	case "github":
-		userName = user.RawData["login"]
-	case "google":
-		userName = user.RawData["email"]
-	}
-	if userName == nil {
-		userName = "unknown"
-	}
-
 	authCookie, _ := json.Marshal(map[string]interface{}{
-		"name": userName,
+		"name": getUserName(user),
 	})
 	authCookieValue := base64.StdEncoding.EncodeToString(authCookie)
 	http.SetCookie(w, &http.Cookie{
@@ -77,4 +66,19 @@ func callback(w http.ResponseWriter, r *http.Request) {
 		Path:  "/"})
 	w.Header().Set("Location", "/chat")
 	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func getUserName(user goth.User) interface{} {
+	var userName interface{}
+	switch {
+	case user.Name != "":
+		userName = user.Name
+	case user.NickName != "":
+		userName = user.NickName
+	case user.Email != "":
+		userName = user.Email
+	default:
+		userName = "unknown"
+	}
+	return userName
 }
