@@ -57,7 +57,8 @@ func callback(w http.ResponseWriter, r *http.Request) {
 	}
 
 	authCookie, _ := json.Marshal(map[string]interface{}{
-		"name": getUserName(user),
+		"name":       getUserName(user),
+		"avatar_url": user.AvatarURL,
 	})
 	authCookieValue := base64.StdEncoding.EncodeToString(authCookie)
 	http.SetCookie(w, &http.Cookie{
