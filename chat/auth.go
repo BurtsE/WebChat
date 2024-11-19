@@ -55,8 +55,20 @@ func callback(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
+	var userName interface{}
+	provider, _ := getProviderName(r)
+	switch provider {
+	case "github":
+		userName = user.RawData["login"]
+	case "google":
+		userName = user.RawData["email"]
+	}
+	if userName == nil {
+		userName = "unknown"
+	}
+
 	authCookie, _ := json.Marshal(map[string]interface{}{
-		"name": user.RawData["login"],
+		"name": userName,
 	})
 	authCookieValue := base64.StdEncoding.EncodeToString(authCookie)
 	http.SetCookie(w, &http.Cookie{

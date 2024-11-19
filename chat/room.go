@@ -48,12 +48,12 @@ func (r *room) run() {
 		case client := <-r.join:
 			// joining
 			r.clients[client] = true
-			r.tracer.Trace("New client joined")
+			r.tracer.Trace("New client joined: ", client.userData)
 		case client := <-r.leave:
 			// leaving
 			delete(r.clients, client)
 			close(client.send)
-			r.tracer.Trace("Client left")
+			r.tracer.Trace("Client left: ", client.userData)
 		case msg := <-r.forward:
 			// forward message to all clients
 			for client := range r.clients {
@@ -75,6 +75,7 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("Failed to get user data:", err)
 		return
 	}
+
 	client := &client{
 		socket:   socket,
 		send:     make(chan *message, messageBufferSize),

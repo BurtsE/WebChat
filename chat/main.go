@@ -75,7 +75,7 @@ func configureOauth2() {
 	githubClientID := os.Getenv("GITHUB_CLIENT_ID")
 	githubClientSecret := os.Getenv("GITHUB_CLIENT_SECRET")
 	goth.UseProviders(
-		google.New(googleClientID, googleClientSecret, "http://localhost:8080/auth/callback/google/)"),
+		google.New(googleClientID, googleClientSecret, "http://localhost:8080/auth/callback/google/"),
 		// facebook.New(clientID, clientSecret, "http://localhost:8080/auth/callback/facebook/"),
 		github.New(githubClientID, githubClientSecret, "http://localhost:8080/auth/callback/github/"),
 	)
