@@ -56,6 +56,7 @@ func main() {
 	http.Handle("/login", &templateHandler{filename: "login.html"})
 	http.Handle("/room", r)
 	http.HandleFunc("/auth/{action}/{provider}/", loginHandler)
+	http.HandleFunc("/logout", logout)
 
 	// Handle static css and js files
 	//http.Handle("/assets/", http.StripPrefix("/assets",
