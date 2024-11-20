@@ -1,11 +1,8 @@
 package main
 
 import (
-	"crypto/md5"
 	"errors"
 	"fmt"
-	"io"
-	"strings"
 )
 
 // ErrNoAvatarURL is the error that is returned when the
@@ -44,24 +41,18 @@ type GravatarAvatar struct{}
 
 var useGravatarAvatar GravatarAvatar
 
-// TODO prevent hashing every time we need avatar URL
 func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
 	var (
-		email    interface{}
-		emailStr string
+		userId   interface{}
+		userHash string
 		ok       bool
 	)
-	if email, ok = c.userData["email"]; !ok {
+	if userId, ok = c.userData["userId"]; !ok {
 		return "", ErrNoAvatarURL
 	}
-	if emailStr, ok = email.(string); !ok {
+	if userHash, ok = userId.(string); !ok {
 		return "", ErrNoAvatarURL
 	}
 
-	m := md5.New()
-	_, err := io.WriteString(m, strings.ToLower(emailStr))
-	if err != nil {
-		return "", ErrNoAvatarURL
-	}
-	return fmt.Sprintf("//www.gravatar.com/avatar/%x", m.Sum(nil)), nil
+	return fmt.Sprintf("//www.gravatar.com/avatar/%s", userHash), nil
 }

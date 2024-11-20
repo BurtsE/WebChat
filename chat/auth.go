@@ -1,12 +1,15 @@
 package main
 
 import (
+	"crypto/md5"
 	"errors"
 	"fmt"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
 	"github.com/stretchr/objx"
+	"io"
 	"net/http"
+	"strings"
 )
 
 type authHandler struct {
@@ -55,10 +58,14 @@ func callback(w http.ResponseWriter, r *http.Request) {
 			user, err), http.StatusInternalServerError)
 		return
 	}
+	m := md5.New()
+	io.WriteString(m, strings.ToLower(user.Email))
+	userId := fmt.Sprintf("%x", m.Sum(nil))
+
 	authCookieValue := objx.New(map[string]interface{}{
+		"userId":     userId,
 		"name":       getUserName(user),
 		"avatar_url": user.AvatarURL,
-		"email":      user.Email,
 	}).MustBase64()
 	http.SetCookie(w, &http.Cookie{
 		Name:  "auth",
