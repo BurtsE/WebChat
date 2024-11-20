@@ -3,6 +3,7 @@ package main
 import (
 	"WebChat/trace"
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/objx"
 	"log"
 	"net/http"
 )
@@ -30,15 +31,18 @@ type room struct {
 	// tracer will receive trace information of activity
 	// in the room.
 	tracer trace.Tracer
+	// avatar is how avatar information will be obtained.
+	avatar Avatar
 }
 
-func newRoom() *room {
+func newRoom(avatar Avatar) *room {
 	return &room{
 		forward: make(chan *message),
 		join:    make(chan *client),
 		leave:   make(chan *client),
 		clients: make(map[*client]bool),
 		tracer:  trace.Off(),
+		avatar:  avatar,
 	}
 }
 
@@ -70,17 +74,16 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
-	userData, err := getUserData(req)
+	authCookie, err := req.Cookie("auth")
 	if err != nil {
-		log.Fatal("Failed to get user data:", err)
+		log.Fatal("Failed to get auth cookie:", err)
 		return
 	}
-
 	client := &client{
 		socket:   socket,
 		send:     make(chan *message, messageBufferSize),
 		room:     r,
-		userData: userData,
+		userData: objx.MustFromBase64(authCookie.Value),
 	}
 	r.join <- client
 	defer func() { r.leave <- client }()

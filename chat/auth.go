@@ -1,12 +1,11 @@
 package main
 
 import (
-	"encoding/base64"
-	"encoding/json"
 	"errors"
 	"fmt"
 	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
+	"github.com/stretchr/objx"
 	"net/http"
 )
 
@@ -56,12 +55,11 @@ func callback(w http.ResponseWriter, r *http.Request) {
 			user, err), http.StatusInternalServerError)
 		return
 	}
-
-	authCookie, _ := json.Marshal(map[string]interface{}{
+	authCookieValue := objx.New(map[string]interface{}{
 		"name":       getUserName(user),
 		"avatar_url": user.AvatarURL,
-	})
-	authCookieValue := base64.StdEncoding.EncodeToString(authCookie)
+		"email":      user.Email,
+	}).MustBase64()
 	http.SetCookie(w, &http.Cookie{
 		Name:  "auth",
 		Value: authCookieValue,
@@ -70,19 +68,18 @@ func callback(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-func getUserName(user goth.User) interface{} {
-	var userName interface{}
+// TODO refactor to return string
+func getUserName(user goth.User) string {
 	switch {
 	case user.Name != "":
-		userName = user.Name
+		return user.Name
 	case user.NickName != "":
-		userName = user.NickName
+		return user.NickName
 	case user.Email != "":
-		userName = user.Email
+		return user.Email
 	default:
-		userName = "unknown"
+		return "unknown"
 	}
-	return userName
 }
 
 func logout(w http.ResponseWriter, r *http.Request) {
