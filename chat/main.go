@@ -48,7 +48,7 @@ func main() {
 
 	configureOauth2()
 
-	r := newRoom()
+	r := newRoom(useAuthAvatar)
 	r.tracer = trace.New(os.Stdout)
 
 	http.Handle("/", http.RedirectHandler("/chat", http.StatusFound))
