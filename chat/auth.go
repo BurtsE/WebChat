@@ -68,7 +68,6 @@ func callback(w http.ResponseWriter, r *http.Request) {
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }
 
-// TODO refactor to return string
 func getUserName(user goth.User) string {
 	switch {
 	case user.Name != "":
