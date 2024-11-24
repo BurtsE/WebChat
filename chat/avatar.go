@@ -16,7 +16,7 @@ var ErrNoAvatarURL = errors.New("chat: Unable to get an avatar URL")
 type Avatar interface {
 	// GetAvatarURL gets the avatar URL for the specified client,
 	// or returns an error if something goes wrong.
-	GetAvatarURL(c *client) (string, error)
+	GetAvatarURL(user chatUser) (string, error)
 }
 
 type AuthAvatar struct{}
