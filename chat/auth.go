@@ -26,6 +26,10 @@ func (u *chatUser) UniqueID() string {
 	return u.uniqueID
 }
 
+func (u *chatUser) AvatarURL() string {
+	return u.User.AvatarURL
+}
+
 type authHandler struct {
 	next http.Handler
 }
