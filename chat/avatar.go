@@ -23,8 +23,8 @@ type AuthAvatar struct{}
 
 var UseAuthAvatar AuthAvatar
 
-func (AuthAvatar) GetAvatarURL(user chatUser) (string, error) {
-	url := user.AvatarURL
+func (AuthAvatar) GetAvatarURL(user ChatUser) (string, error) {
+	url := user.AvatarURL()
 	if len(url) == 0 {
 		return "", ErrNoAvatarURL
 	}
@@ -35,7 +35,7 @@ type GravatarAvatar struct{}
 
 var UseGravatarAvatar GravatarAvatar
 
-func (GravatarAvatar) GetAvatarURL(user chatUser) (string, error) {
+func (GravatarAvatar) GetAvatarURL(user ChatUser) (string, error) {
 	return "//www.gravatar.com/avatar/" + user.UniqueID(), nil
 }
 
