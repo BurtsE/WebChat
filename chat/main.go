@@ -7,6 +7,7 @@ import (
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
+	"github.com/stretchr/objx"
 	"log"
 	"net/http"
 	"os"
@@ -14,6 +15,13 @@ import (
 	"sync"
 	"text/template"
 )
+
+// set the active Avatar implementation
+var avatars Avatar = TryAvatars{
+	UseFileSystemAvatar,
+	UseAuthAvatar,
+	UseGravatarAvatar,
+}
 
 // templ represents a single template
 type templateHandler struct {
@@ -32,8 +40,8 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Host": r.Host,
 	}
 
-	if userData, err := getUserData(r); err == nil {
-		data["UserData"] = userData
+	if authCookie, err := r.Cookie("auth"); err == nil {
+		data["UserData"] = objx.MustFromBase64(authCookie.Value)
 	}
 
 	err := t.templ.Execute(w, data)
@@ -56,10 +64,17 @@ func main() {
 	http.Handle("/login", &templateHandler{filename: "login.html"})
 	http.Handle("/room", r)
 	http.HandleFunc("/auth/{action}/{provider}/", loginHandler)
+	http.HandleFunc("/logout", logout)
+	http.Handle("/upload", &templateHandler{filename: "upload.html"})
+	http.HandleFunc("/uploader", uploaderHandler)
 
 	// Handle static css and js files
 	//http.Handle("/assets/", http.StripPrefix("/assets",
 	//	http.FileServer(http.Dir("/path/to/assets/"))))
+
+	http.Handle("/users/",
+		http.StripPrefix("/users/",
+			http.FileServer(http.Dir("./users"))))
 
 	go r.run()
 

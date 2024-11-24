@@ -13,5 +13,6 @@ require (
 	github.com/gorilla/mux v1.6.2 // indirect
 	github.com/gorilla/securecookie v1.1.1 // indirect
 	github.com/gorilla/sessions v1.1.1 // indirect
+	github.com/stretchr/objx v0.5.2 // indirect
 	golang.org/x/oauth2 v0.24.0 // indirect
 )

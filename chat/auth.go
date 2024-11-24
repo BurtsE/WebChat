@@ -1,20 +1,43 @@
 package main
 
 import (
-	"encoding/base64"
-	"encoding/json"
+	"crypto/md5"
+	"errors"
 	"fmt"
+	"github.com/markbates/goth"
 	"github.com/markbates/goth/gothic"
+	"github.com/stretchr/objx"
+	"io"
+	"log"
 	"net/http"
+	"strings"
 )
+
+type ChatUser interface {
+	UniqueID() string
+	AvatarURL() string
+}
+
+type chatUser struct {
+	goth.User
+	uniqueID string
+}
+
+func (u *chatUser) UniqueID() string {
+	return u.uniqueID
+}
+
+func (u *chatUser) AvatarURL() string {
+	return u.User.AvatarURL
+}
 
 type authHandler struct {
 	next http.Handler
 }
 
 func (h *authHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	_, err := r.Cookie("auth")
-	if err == http.ErrNoCookie {
+	cookie, err := r.Cookie("auth")
+	if errors.Is(err, http.ErrNoCookie) || cookie.Value == "" {
 		w.Header().Set("Location", "/login")
 		w.WriteHeader(http.StatusTemporaryRedirect)
 		return
@@ -49,32 +72,54 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 func callback(w http.ResponseWriter, r *http.Request) {
 	user, err := gothic.CompleteUserAuth(w, r)
-	if err != nil {
-		http.Error(w, fmt.Sprintf("Error when trying to get user from %s: %s",
-			user, err), http.StatusInternalServerError)
-		return
-	}
-
-	var userName interface{}
 	provider, _ := getProviderName(r)
-	switch provider {
-	case "github":
-		userName = user.RawData["login"]
-	case "google":
-		userName = user.RawData["email"]
+	if err != nil {
+		log.Fatalln("Error when trying to get user from", provider, "-", err)
 	}
-	if userName == nil {
-		userName = "unknown"
+	m := md5.New()
+	io.WriteString(m, strings.ToLower(user.Email))
+	userId := fmt.Sprintf("%x", m.Sum(nil))
+	newChatUser := chatUser{
+		User:     user,
+		uniqueID: userId,
 	}
-
-	authCookie, _ := json.Marshal(map[string]interface{}{
-		"name": userName,
-	})
-	authCookieValue := base64.StdEncoding.EncodeToString(authCookie)
+	avatarURL, err := avatars.GetAvatarURL(&newChatUser)
+	if err != nil {
+		log.Fatalln("Error when trying to GetAvatarURL", "-", err)
+	}
+	authCookieValue := objx.New(map[string]interface{}{
+		"userId":     userId,
+		"name":       getUserName(user),
+		"avatar_url": avatarURL,
+	}).MustBase64()
 	http.SetCookie(w, &http.Cookie{
 		Name:  "auth",
 		Value: authCookieValue,
 		Path:  "/"})
+	w.Header().Set("Location", "/chat")
+	w.WriteHeader(http.StatusTemporaryRedirect)
+}
+
+func getUserName(user goth.User) string {
+	switch {
+	case user.Name != "":
+		return user.Name
+	case user.NickName != "":
+		return user.NickName
+	case user.Email != "":
+		return user.Email
+	default:
+		return "unknown"
+	}
+}
+
+func logout(w http.ResponseWriter, r *http.Request) {
+	http.SetCookie(w, &http.Cookie{
+		Name:   "auth",
+		Value:  "",
+		Path:   "/",
+		MaxAge: -1,
+	})
 	w.Header().Set("Location", "/chat")
 	w.WriteHeader(http.StatusTemporaryRedirect)
 }

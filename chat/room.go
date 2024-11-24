@@ -3,6 +3,7 @@ package main
 import (
 	"WebChat/trace"
 	"github.com/gorilla/websocket"
+	"github.com/stretchr/objx"
 	"log"
 	"net/http"
 )
@@ -70,17 +71,16 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("ServeHTTP:", err)
 		return
 	}
-	userData, err := getUserData(req)
+	authCookie, err := req.Cookie("auth")
 	if err != nil {
-		log.Fatal("Failed to get user data:", err)
+		log.Fatal("Failed to get auth cookie:", err)
 		return
 	}
-
 	client := &client{
 		socket:   socket,
 		send:     make(chan *message, messageBufferSize),
 		room:     r,
-		userData: userData,
+		userData: objx.MustFromBase64(authCookie.Value),
 	}
 	r.join <- client
 	defer func() { r.leave <- client }()
