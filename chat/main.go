@@ -16,6 +16,13 @@ import (
 	"text/template"
 )
 
+// set the active Avatar implementation
+var avatars Avatar = TryAvatars{
+	UseFileSystemAvatar,
+	UseAuthAvatar,
+	UseGravatarAvatar,
+}
+
 // templ represents a single template
 type templateHandler struct {
 	once     sync.Once
@@ -49,7 +56,7 @@ func main() {
 
 	configureOauth2()
 
-	r := newRoom(UseFileSystemAvatar)
+	r := newRoom()
 	r.tracer = trace.New(os.Stdout)
 
 	http.Handle("/", http.RedirectHandler("/chat", http.StatusFound))

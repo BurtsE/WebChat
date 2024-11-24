@@ -22,7 +22,7 @@ func uploaderHandler(w http.ResponseWriter, req *http.Request) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return
 	}
-	err = os.Mkdir(path.Join("users", userId), 0777)
+	err = os.Mkdir(path.Join("users", "avatars", userId), 0777)
 	if err != nil && !errors.Is(err, os.ErrExist) {
 		http.Error(w, err.Error(), http.StatusInternalServerError)
 		return

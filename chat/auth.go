@@ -8,6 +8,7 @@ import (
 	"github.com/markbates/goth/gothic"
 	"github.com/stretchr/objx"
 	"io"
+	"log"
 	"net/http"
 	"strings"
 )
@@ -71,19 +72,25 @@ func loginHandler(w http.ResponseWriter, r *http.Request) {
 
 func callback(w http.ResponseWriter, r *http.Request) {
 	user, err := gothic.CompleteUserAuth(w, r)
+	provider, _ := getProviderName(r)
 	if err != nil {
-		http.Error(w, fmt.Sprintf("Error when trying to get user from %s: %s",
-			user, err), http.StatusInternalServerError)
-		return
+		log.Fatalln("Error when trying to get user from", provider, "-", err)
 	}
 	m := md5.New()
 	io.WriteString(m, strings.ToLower(user.Email))
 	userId := fmt.Sprintf("%x", m.Sum(nil))
-
+	newChatUser := chatUser{
+		User:     user,
+		uniqueID: userId,
+	}
+	avatarURL, err := avatars.GetAvatarURL(&newChatUser)
+	if err != nil {
+		log.Fatalln("Error when trying to GetAvatarURL", "-", err)
+	}
 	authCookieValue := objx.New(map[string]interface{}{
 		"userId":     userId,
 		"name":       getUserName(user),
-		"avatar_url": user.AvatarURL,
+		"avatar_url": avatarURL,
 	}).MustBase64()
 	http.SetCookie(w, &http.Cookie{
 		Name:  "auth",
