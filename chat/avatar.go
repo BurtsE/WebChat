@@ -2,7 +2,6 @@ package main
 
 import (
 	"errors"
-	"fmt"
 	"os"
 	"path"
 	"path/filepath"
@@ -24,60 +23,28 @@ type AuthAvatar struct{}
 
 var UseAuthAvatar AuthAvatar
 
-func (AuthAvatar) GetAvatarURL(c *client) (string, error) {
-	var (
-		url    interface{}
-		urlStr string
-		ok     bool
-	)
-	if url, ok = c.userData["avatar_url"]; !ok {
+func (AuthAvatar) GetAvatarURL(user chatUser) (string, error) {
+	url := user.AvatarURL
+	if len(url) == 0 {
 		return "", ErrNoAvatarURL
 	}
-	if urlStr, ok = url.(string); !ok {
-		return "", ErrNoAvatarURL
-	}
-
-	return urlStr, nil
+	return url, nil
 }
 
 type GravatarAvatar struct{}
 
 var UseGravatarAvatar GravatarAvatar
 
-func (GravatarAvatar) GetAvatarURL(c *client) (string, error) {
-	var (
-		userId   interface{}
-		userHash string
-		ok       bool
-	)
-	if userId, ok = c.userData["userId"]; !ok {
-		return "", ErrNoAvatarURL
-	}
-	if userHash, ok = userId.(string); !ok {
-		return "", ErrNoAvatarURL
-	}
-
-	return fmt.Sprintf("//www.gravatar.com/avatar/%s", userHash), nil
+func (GravatarAvatar) GetAvatarURL(user chatUser) (string, error) {
+	return "//www.gravatar.com/avatar/" + user.UniqueID(), nil
 }
 
 type FileSystemAvatar struct{}
 
 var UseFileSystemAvatar FileSystemAvatar
 
-func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
-	var (
-		userId   interface{}
-		userHash string
-		ok       bool
-	)
+func (FileSystemAvatar) GetAvatarURL(user ChatUser) (string, error) {
 	dirname := filepath.Join("users", "avatars")
-
-	if userId, ok = c.userData["userId"]; !ok {
-		return "", ErrNoAvatarURL
-	}
-	if userHash, ok = userId.(string); !ok {
-		return "", ErrNoAvatarURL
-	}
 	files, err := os.ReadDir(dirname)
 	if err != nil {
 		return "", ErrNoAvatarURL
@@ -86,10 +53,9 @@ func (FileSystemAvatar) GetAvatarURL(c *client) (string, error) {
 		if file.IsDir() {
 			continue
 		}
-		if match, _ := path.Match(userHash+"*", file.Name()); match {
+		if match, _ := path.Match(user.UniqueID()+"*", file.Name()); match {
 			return filepath.Join(dirname, file.Name()), nil
 		}
 	}
-
 	return "", ErrNoAvatarURL
 }

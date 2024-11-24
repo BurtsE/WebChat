@@ -2,22 +2,23 @@ package main
 
 import (
 	"errors"
+	"github.com/markbates/goth"
 	"os"
 	"path/filepath"
 	"testing"
 )
 
-func TestAutahAvatar(t *testing.T) {
+func TestAuthAvatar(t *testing.T) {
 	var authAvatar AuthAvatar
-	testClient := new(client)
-	url, err := authAvatar.GetAvatarURL(testClient) // Calling a method on a nil object
-	if !errors.Is(err, ErrNoAvatarURL) {
+	testUser := goth.User{}
+	testChatUser := &chatUser{User: testUser}
+	url, err := authAvatar.GetAvatarURL(testChatUser)
+	if err != ErrNoAvatarURL {
 		t.Error("AuthAvatar.GetAvatarURL should return ErrNoAvatarURL when no value present")
 	}
-	// set a value
 	testUrl := "http://url-to-gravatar/"
-	testClient.userData = map[string]interface{}{"avatar_url": testUrl}
-	url, err = authAvatar.GetAvatarURL(testClient)
+
+	url, err = authAvatar.GetAvatarURL(testChatUser)
 	if err != nil {
 		t.Error("AuthAvatar.GetAvatarURL should return no error when value present")
 	}
