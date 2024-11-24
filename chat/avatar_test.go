@@ -2,6 +2,8 @@ package main
 
 import (
 	"errors"
+	"os"
+	"path/filepath"
 	"testing"
 )
 
@@ -35,6 +37,26 @@ func TestGravatarAvatar(t *testing.T) {
 	}
 	if url != "//www.gravatar.com/avatar/0bc83cb571cd1c50ba6f3e8a78ef1346" {
 		t.Errorf("GravatarAvatar.GetAvatarURL wrongly returned %s", url)
+	}
+}
+
+// When program is compiled, wd is projects dir
+// when test is running, wd is file dir
+// thus should change wd
+func TestFileSystemAvatar(t *testing.T) {
+	os.Chdir("../")
+	filename := filepath.Join("users", "avatars", "abc.jpg")
+	os.WriteFile(filename, []byte{}, 0777)
+	defer os.Remove(filename)
+	var fileSystemAvatar FileSystemAvatar
+	testClient := new(client)
+	testClient.userData = map[string]interface{}{"userId": "abc"}
+	url, err := fileSystemAvatar.GetAvatarURL(testClient)
+	if err != nil {
+		t.Error("FileSystemAvatar.GetAvatarURL should not return an error")
+	}
+	if url != filename {
+		t.Errorf("FileSystemAvatar.GetAvatarURL wrongly returned %s", url)
 	}
 
 }

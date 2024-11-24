@@ -7,6 +7,7 @@ import (
 	"github.com/markbates/goth/gothic"
 	"github.com/markbates/goth/providers/github"
 	"github.com/markbates/goth/providers/google"
+	"github.com/stretchr/objx"
 	"log"
 	"net/http"
 	"os"
@@ -32,8 +33,8 @@ func (t *templateHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
 		"Host": r.Host,
 	}
 
-	if userData, err := getUserData(r); err == nil {
-		data["UserData"] = userData
+	if authCookie, err := r.Cookie("auth"); err == nil {
+		data["UserData"] = objx.MustFromBase64(authCookie.Value)
 	}
 
 	err := t.templ.Execute(w, data)
@@ -48,7 +49,7 @@ func main() {
 
 	configureOauth2()
 
-	r := newRoom(useGravatarAvatar)
+	r := newRoom(UseFileSystemAvatar)
 	r.tracer = trace.New(os.Stdout)
 
 	http.Handle("/", http.RedirectHandler("/chat", http.StatusFound))
@@ -63,6 +64,10 @@ func main() {
 	// Handle static css and js files
 	//http.Handle("/assets/", http.StripPrefix("/assets",
 	//	http.FileServer(http.Dir("/path/to/assets/"))))
+
+	http.Handle("/users/",
+		http.StripPrefix("/users/",
+			http.FileServer(http.Dir("./users"))))
 
 	go r.run()
 

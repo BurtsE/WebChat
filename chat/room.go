@@ -79,7 +79,6 @@ func (r *room) ServeHTTP(w http.ResponseWriter, req *http.Request) {
 		log.Fatal("Failed to get auth cookie:", err)
 		return
 	}
-	// TODO might panic
 	client := &client{
 		socket:   socket,
 		send:     make(chan *message, messageBufferSize),
